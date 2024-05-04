@@ -1,0 +1,70 @@
+```{r}
+library(tidyverse)# Load tidyverse
+library(ggplot2)# Load ggplot2
+cancer<-as.data.frame(read.csv("cancer patient data sets.csv")) #load data
+summary(cancer)#get summary of the dataset
+dim(cancer)#look at the dimensions of the dataset
+```
+
+#Data preparation
+```{r}
+library(dplyr)
+library(AER)
+library(ggplot2)
+library(arm) #import packages
+
+
+cancer<-cancer|>
+  dplyr::select(Smoking, Air.Pollution, Age, Alcohol.use, chronic.Lung.Disease)  #select variables needed
+
+cancer<-cancer|>
+  mutate(chronic.Lung.log=case_when(
+    chronic.Lung.Disease %in% c(1, 2, 3) ~ 0,#code the level 1, 2, 3 into "0" (low level)
+    chronic.Lung.Disease %in% c(4, 5, 6, 7) ~ 1)) #code the level 4, 5, 6, 7 into "1" (high level) 
+#mutate chronic.Lung.Disease into numerical variable
+
+head(cancer) #see the results
+```
+
+#Regression Model - Logistic Regression
+```{r}
+#logistic regression
+lg_model <- glm(chronic.Lung.log~Smoking+Air.Pollution+Age+Alcohol.use,
+                data = cancer, family = "binomial") #conduct logistic regression
+summary(lg_model) # see statistical table
+```
+```{r}
+coef(lg_model) #calculate the coefficients of the model
+exp(coef(lg_model)) #calculate the log ratios
+```
+```{r}
+plot(x=cancer$Age,y=lg_model$fitted.values) # plot the logistic regression between age and chronic lung cancer
+plot(x=cancer$Air.Pollution,y=lg_model$fitted.values) # plot the logistic regression between air pollution and chronic lung cancer
+plot(x=cancer$Alcohol.use,y=lg_model$fitted.values) # plot the logistic regression between alcohol use and chronic lung cancer
+plot(x=cancer$Smoking,y=lg_model$fitted.values) # plot the logistic regression between smoking and chronic lung cancer
+```
+
+#Regression Model - Poisson Regression
+```{r}
+#Poisson Regression
+fit1<-glm(chronic.Lung.Disease~Smoking+Air.Pollution+Age+Alcohol.use,
+    family = poisson,
+    data = cancer)#conduct a poisson regression
+
+summary(fit1) #get the summary of this model
+```
+```{r}
+plot(fit1) #plot the residuals vs fitted, QQ plot, etc.
+```
+
+```{r}
+fit1$deviance/fit1$df.residual #calculate the ratio of deviance
+```
+
+```{r}
+pchisq(fit1$deviance, df=fit1$df.residual, lower.tail=FALSE) #calculate the chi-square
+```
+
+```{r}
+dispersiontest(fit1, trafo=1) #do the dispersion test to see if there's dispersion
+```
